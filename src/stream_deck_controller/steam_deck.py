@@ -4,9 +4,10 @@ from matplotlib import font_manager
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from StreamDeck.Devices.StreamDeck import StreamDeck
 from StreamDeck.ImageHelpers import PILHelper
+from StreamDeck.Transport.Transport import TransportError
 
 import image_util
-from network_tables import NetworkTablesController
+from network_tables import Button, NetworkTablesController
 
 KEY_SPACING = (36, 36)
 BACKGROUND_COLOR = "#9D2235"
@@ -30,7 +31,10 @@ class StreamDeckController:
         self.open()
 
     def __exit__(self, *_):
-        self.close()
+        try:
+            self.close()
+        except TransportError:  # pylint: disable=bare-except
+            pass
 
     def create_full_deck_sized_image(self, image_filename: str):
         """Generates an image that is correctly sized to fit across all keys"""
@@ -109,8 +113,13 @@ class StreamDeckController:
         self.render_all_keys(self._default_background)
 
     def render_key(self, icon_filename: str, label_text: str, background: str):
-        icon = image_util.image_from_svg(icon_filename, 48)
-        image = PILHelper.create_scaled_key_image(self._deck, icon, margins=[0, 0, 20, 0], background=background)
+        image = None
+        if icon_filename != "":
+            icon_path = os.path.join(self._assets_path, icon_filename + ".svg")
+            icon = image_util.image_from_svg(icon_path, 48)
+            image = PILHelper.create_scaled_key_image(self._deck, icon, margins=[0, 0, 20, 0], background=background)
+        else:
+            image = PILHelper.create_key_image(self._deck, background=background)
 
         draw = ImageDraw.Draw(image)
         draw.text(
@@ -123,31 +132,14 @@ class StreamDeckController:
 
         return PILHelper.to_native_key_format(self._deck, image)
 
-    def get_key_style(self, key: int, state: bool):
-        if key < 5:
-            name = "up"
-            icon = "ArrowUpward.svg"
-            label = "Up"
-        elif key < 10:
-            name = "circle"
-            icon = "Circle.svg"
-            label = "Center"
-        else:
-            name = "down"
-            icon = "ArrowDownward.svg"
-            label = "Down"
+    def set_key_empty(self, key: int):
+        image = PILHelper.create_key_image(self._deck, background=NOT_ACTIVE_COLOR)
+        self._deck.set_key_image(key, PILHelper.to_native_key_format(self._deck, image))
 
-        return {
-            "name": name,
-            "icon": os.path.join(self._assets_path, icon),
-            "label": label,
-            "background": ACTIVE_COLOR if state else NOT_ACTIVE_COLOR,
-        }
-
-    def set_key_image(self, key: int, state: bool):
-        key_style = self.get_key_style(key, state)
-        image = self.render_key(key_style["icon"], key_style["label"], key_style["background"])
-        self._deck.set_key_image(key, image)
+    def set_key_image(self, button: Button):
+        background = ACTIVE_COLOR if button.selected else NOT_ACTIVE_COLOR
+        image = self.render_key(button.icon.get(), button.label.get(), background)
+        self._deck.set_key_image(button.key, image)
 
     def on_key_change(self, _, key: int, state: bool):
         print(f"{self._deck.get_serial_number()} Key {key} = {state}", flush=True)
@@ -158,8 +150,13 @@ class StreamDeckController:
             self.render_default_background()
             return
 
+        self._deck.reset()
         for key in range(self._deck.key_count()):
-            self.set_key_image(key, False)
+            button = self._nt_controller.get_button(key)
+            if button is None:
+                self.set_key_empty(key)
+            else:
+                self.set_key_image(button)
 
     def is_open(self) -> bool:
         return self._deck.is_open()

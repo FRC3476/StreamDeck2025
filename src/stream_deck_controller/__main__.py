@@ -1,3 +1,4 @@
+import logging
 import os
 import signal
 import sys
@@ -7,6 +8,7 @@ from typing import Callable
 import ntcore
 from StreamDeck.DeviceManager import DeviceManager
 from StreamDeck.Devices import StreamDeck
+from StreamDeck.Transport.Transport import TransportError
 
 from steam_deck import StreamDeckController
 from network_tables import NetworkTablesController
@@ -56,7 +58,10 @@ def main(retry: Callable[[], bool]):
             with _controller:
                 nt_controller.set_device_connected(True)
                 while _controller.is_open():
-                    nt_controller.periodic()
+                    try:
+                        nt_controller.periodic()
+                    except TransportError:
+                        logging.exception("Transport error occurred")
                     time.sleep(0.02)
 
         nt_controller.set_device_connected(False)
