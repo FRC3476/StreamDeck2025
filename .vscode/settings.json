@@ -1,4 +1,6 @@
 {
+  "python.autoComplete.extraPaths": ["src"],
+  "python.analysis.extraPaths": [".venv", "src"],
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
   }

@@ -3,3 +3,4 @@ disable=
     consider-using-f-string,
     line-too-long,
     missing-docstring,
+    fixme,

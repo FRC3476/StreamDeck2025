@@ -5,9 +5,10 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from StreamDeck.Devices.StreamDeck import StreamDeck
 from StreamDeck.ImageHelpers import PILHelper
 from StreamDeck.Transport.Transport import TransportError
+from config.config_store import ButtonConfig, ConfigStore
 
-import image_util
-from network_tables import Button, NetworkTablesController
+import util.image_util as image_util
+from output.output_publisher import OutputPublisher
 
 KEY_SPACING = (36, 36)
 BACKGROUND_COLOR = "#9D2235"
@@ -17,11 +18,13 @@ NOT_ACTIVE_COLOR = "#424242"
 
 
 class StreamDeckController:
-    def __init__(self, deck: StreamDeck, nt_controller: NetworkTablesController, assets_path: str):
+    def __init__(self, deck: StreamDeck, config: ConfigStore, output_publisher: OutputPublisher, assets_path: str):
         self._deck = deck
-        self._nt_controller = nt_controller
+        self._config = config
+        self._output_publisher = output_publisher
         self._assets_path = assets_path
         self._default_background = self.generate_key_images_from_deck_sized_image(BACKGROUND_IMAGE)
+        self._icon_cache: dict[tuple[str, str, str], Image.Image] = dict()
 
         font = font_manager.FontProperties(family="Arial")
         file = font_manager.findfont(font)
@@ -55,14 +58,14 @@ class StreamDeckController:
         filled_foreground = Image.new(
             "RGBA",
             (
-                int(foreground.height * full_deck_image_size[0] / full_deck_image_size[1]),
+                foreground.height * full_deck_image_size[0] // full_deck_image_size[1],
                 foreground.height,
             ),
             color=BACKGROUND_COLOR,
         )
         filled_foreground.paste(
             foreground,
-            (int((filled_foreground.width - foreground.width) / 2), 0),
+            ((filled_foreground.width - foreground.width) // 2, 0),
             foreground,
         )
 
@@ -113,6 +116,10 @@ class StreamDeckController:
         self.render_all_keys(self._default_background)
 
     def render_key(self, icon_filename: str, label_text: str, background: str):
+        cache_key = (icon_filename, label_text, background)
+        if cache_key in self._icon_cache:
+            return PILHelper.to_native_key_format(self._deck, self._icon_cache[cache_key])
+
         image = None
         if icon_filename != "":
             icon_path = os.path.join(self._assets_path, icon_filename + ".svg")
@@ -130,33 +137,34 @@ class StreamDeckController:
             fill="white",
         )
 
+        self._icon_cache[cache_key] = image
         return PILHelper.to_native_key_format(self._deck, image)
 
     def set_key_empty(self, key: int):
         image = PILHelper.create_key_image(self._deck, background=NOT_ACTIVE_COLOR)
         self._deck.set_key_image(key, PILHelper.to_native_key_format(self._deck, image))
 
-    def set_key_image(self, button: Button):
+    def set_key_image(self, key: int, button: ButtonConfig):
         background = ACTIVE_COLOR if button.selected else NOT_ACTIVE_COLOR
-        image = self.render_key(button.icon.get(), button.label.get(), background)
-        self._deck.set_key_image(button.key, image)
+        image = self.render_key(button.icon, button.label, background)
+        self._deck.set_key_image(key, image)
 
-    def on_key_change(self, _, key: int, state: bool):
-        print(f"{self._deck.get_serial_number()} Key {key} = {state}", flush=True)
-        self._nt_controller.set_pressed(key, state)
+    def on_key_change(self, _, key: int, selected: bool):
+        print(f"{self._deck.get_serial_number()} Key {key} = {selected}", flush=True)
+        self._output_publisher.send_button_selected(key, selected)
 
-    def on_connection_change(self, connected: bool):
-        if not connected:
+    def update(self):
+        # TODO: Only send images on changes
+        if not self._config.remote_connected:
             self.render_default_background()
             return
 
-        self._deck.reset()
         for key in range(self._deck.key_count()):
-            button = self._nt_controller.get_button(key)
+            button = self._config.buttons[key] if key < len(self._config.buttons) else None
             if button is None:
                 self.set_key_empty(key)
             else:
-                self.set_key_image(button)
+                self.set_key_image(key, button)
 
     def is_open(self) -> bool:
         return self._deck.is_open()
@@ -171,18 +179,15 @@ class StreamDeckController:
         self._deck.open()
 
         print(
-            f"Opened {self._deck.deck_type()} (sn: '{self._deck.get_serial_number()}', fw: '{self._deck.get_firmware_version()}')"
+            "Opened {} (sn: '{}', fw: '{}')".format(
+                self._deck.deck_type(), self._deck.get_serial_number(), self._deck.get_firmware_version()
+            )
         )
 
         self._deck.set_brightness(80)
-
-        self._nt_controller.bind_on_connection_change(self.on_connection_change)
-        for key in range(self._deck.key_count()):
-            self._nt_controller.bind_button(key, self.set_key_image)
-
-        self.on_connection_change(self._nt_controller.is_connected())
-
         self._deck.set_key_callback(self.on_key_change)
+
+        self.update()
 
     def close(self):
         self.close_deck()
