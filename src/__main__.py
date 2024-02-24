@@ -33,8 +33,8 @@ def main(running: Callable[[], bool]):
     nt_config_source: ConfigSource = NTConfigSource(NUM_BUTTONS)
 
     environment_config_source.update(config)
-    ntcore.NetworkTableInstance.getDefault().setServer("localhost")
-    ntcore.NetworkTableInstance.getDefault().startClient4("localhost")
+    ntcore.NetworkTableInstance.getDefault().setServer(config.server_ip)
+    ntcore.NetworkTableInstance.getDefault().startClient4(config.server_ip)
     nt_config_source.update(config)
 
     output_publisher = NTOutputPublisher(config, NUM_BUTTONS)
