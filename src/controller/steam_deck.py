@@ -11,6 +11,7 @@ import util.image_util as image_util
 from output.output_publisher import OutputPublisher
 
 KEY_SPACING = (36, 36)
+FOREGROUND_COLOR = "#FFFFFF"
 BACKGROUND_COLOR = "#9D2235"
 BACKGROUND_IMAGE = "Decepticub.png"
 ACTIVE_COLOR = BACKGROUND_COLOR
@@ -55,7 +56,7 @@ class StreamDeckController:
 
         # Create a filled version of the image in the correct aspect ratio and then resize it to fit the full deck
         foreground = Image.open(os.path.join(self._assets_path, image_filename)).convert("RGBA")
-        filled_foreground = Image.new(
+        image = Image.new(
             "RGBA",
             (
                 foreground.height * full_deck_image_size[0] // full_deck_image_size[1],
@@ -63,14 +64,14 @@ class StreamDeckController:
             ),
             color=BACKGROUND_COLOR,
         )
-        filled_foreground.paste(
+        image.paste(
             foreground,
-            ((filled_foreground.width - foreground.width) // 2, 0),
+            ((image.width - foreground.width) // 2, 0),
             foreground,
         )
 
         return ImageOps.fit(
-            filled_foreground,
+            image,
             full_deck_image_size,
             Image.Resampling.LANCZOS,
         )
@@ -124,6 +125,7 @@ class StreamDeckController:
         if icon_filename != "":
             icon_path = os.path.join(self._assets_path, icon_filename + ".svg")
             icon = image_util.image_from_svg(icon_path, 48)
+            icon = image_util.color_image(icon, FOREGROUND_COLOR)
             image = PILHelper.create_scaled_key_image(self._deck, icon, margins=[0, 0, 20, 0], background=background)
         else:
             image = PILHelper.create_key_image(self._deck, background=background)
