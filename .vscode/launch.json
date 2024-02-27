@@ -8,7 +8,7 @@
       "program": "src",
       "console": "integratedTerminal",
       "env": {
-        "DEFAULT_SERVER_IP": "localhost"
+        "SD_NT_SERVER_IP": "localhost"
       }
     }
   ]
