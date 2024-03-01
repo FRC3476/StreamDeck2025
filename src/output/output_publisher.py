@@ -47,7 +47,13 @@ class NTOutputPublisher(OutputPublisher):
                 self._buttons.append(
                     ButtonPublisher(
                         key,
-                        table.getBooleanTopic("Selected").publish() if key else None,
+                        (
+                            table.getBooleanTopic("Selected").publish(
+                                ntcore.PubSubOptions(periodic=0.02, keepDuplicates=True)
+                            )
+                            if key
+                            else None
+                        ),
                     )
                 )
 
