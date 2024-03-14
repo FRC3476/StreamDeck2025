@@ -42,18 +42,11 @@ class NTOutputPublisher(OutputPublisher):
 
             self._buttons = []
             for i in range(self._num_buttons):
-                table = deck_table.getSubTable(f"Button/{i}")
                 key = self._config.buttons[i].key if i < len(self._config.buttons) else ""
                 self._buttons.append(
                     ButtonPublisher(
                         key,
-                        (
-                            table.getBooleanTopic("Selected").publish(
-                                ntcore.PubSubOptions(periodic=0.02, keepDuplicates=True)
-                            )
-                            if key
-                            else None
-                        ),
+                        (ntcore.NetworkTableInstance.getDefault().getBooleanTopic(key).publish() if key else None),
                     )
                 )
 
