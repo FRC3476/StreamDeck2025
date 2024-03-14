@@ -4,13 +4,8 @@ import logging
 import skia
 from PIL import Image
 
-images = dict()
-
 
 def image_from_svg(file: str, element_size: int):
-    if file in images:
-        return images[file]
-
     try:
         stream = skia.FILEStream.Make(file)
         svg = skia.SVGDOM.MakeFromStream(stream)
@@ -25,16 +20,13 @@ def image_from_svg(file: str, element_size: int):
             svg.render(canvas)
         with io.BytesIO(surface.makeImageSnapshot().encodeToData()) as f:
             image = Image.open(f).copy()
-            images[file] = image
             print(f"Loaded {file}")
             return image
     except Exception as error:  # pylint: disable=broad-exception-caught
         logging.getLogger(__name__).exception(error)
 
     print(f"Failed to load file {file}")
-    image = Image.new("RGBA", (element_size, element_size), (255, 0, 0, 0))
-    images[file] = image
-    return image
+    return Image.new("RGBA", (element_size, element_size), (255, 0, 0, 0))
 
 
 def color_image(foreground: Image, color: any):

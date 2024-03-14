@@ -25,6 +25,8 @@ class ButtonPublisher:
 
 
 class NTOutputPublisher(OutputPublisher):
+    PRESSED_PUBLISH_OPTIONS = ntcore.PubSubOptions(periodic=0.02, sendAll=True)
+
     def __init__(self, config_store: ConfigStore, num_buttons: int):
         self._init_complete = False
         self._config = config_store
@@ -46,7 +48,13 @@ class NTOutputPublisher(OutputPublisher):
                 self._buttons.append(
                     ButtonPublisher(
                         key,
-                        (ntcore.NetworkTableInstance.getDefault().getBooleanTopic(key).publish() if key else None),
+                        (
+                            ntcore.NetworkTableInstance.getDefault()
+                            .getBooleanTopic(key)
+                            .publish(NTOutputPublisher.PRESSED_PUBLISH_OPTIONS)
+                            if key
+                            else None
+                        ),
                     )
                 )
 
@@ -55,7 +63,11 @@ class NTOutputPublisher(OutputPublisher):
         for config, pub in zip(self._config.buttons, self._buttons):
             if config.key and (config.key != pub.key):
                 pub.key = config.key
-                pub.selected = ntcore.NetworkTableInstance.getDefault().getBooleanTopic(pub.key).publish()
+                pub.selected = (
+                    ntcore.NetworkTableInstance.getDefault()
+                    .getBooleanTopic(pub.key)
+                    .publish(NTOutputPublisher.PRESSED_PUBLISH_OPTIONS)
+                )
 
     def send_connected(self, connected: bool):
         self._ensure_init()
@@ -70,12 +82,6 @@ class NTOutputPublisher(OutputPublisher):
         if index < 0 or index >= len(self._buttons) or index >= len(self._config.buttons):
             return
 
-        config = self._config.buttons[index]
         pub = self._buttons[index]
-
-        if config.key and (config.key != pub.key):
-            pub.key = config.key
-            pub.selected = ntcore.NetworkTableInstance.getDefault().getBooleanTopic(pub.key).publish()
-
         if pub.selected:
             pub.selected.set(selected)

@@ -26,6 +26,7 @@ class StreamDeckController:
         self._assets_path = assets_path
         self._default_background = self.generate_key_images_from_deck_sized_image(BACKGROUND_IMAGE)
         self._icon_cache: dict[tuple[str, str, str], Image.Image] = dict()
+        self._last_images: list[tuple[str, any]] = [("none", None)] * deck.key_count()
 
         font = font_manager.FontProperties(family="Arial")
         file = font_manager.findfont(font)
@@ -111,7 +112,11 @@ class StreamDeckController:
     def render_all_keys(self, key_images: dict):
         for k in range(self._deck.key_count()):
             key_image = key_images[k]
-            self._deck.set_key_image(k, key_image)
+
+            unique_key = ("render_all", None)
+            if self._last_images[k] != unique_key:
+                self._deck.set_key_image(k, key_image)
+                self._last_images[k] = unique_key
 
     def render_default_background(self):
         self.render_all_keys(self._default_background)
@@ -144,12 +149,20 @@ class StreamDeckController:
 
     def set_key_empty(self, key: int):
         image = PILHelper.create_key_image(self._deck, background=NOT_ACTIVE_COLOR)
-        self._deck.set_key_image(key, PILHelper.to_native_key_format(self._deck, image))
+
+        unique_key = ("empty_key", None)
+        if self._last_images[key] != unique_key:
+            self._deck.set_key_image(key, PILHelper.to_native_key_format(self._deck, image))
+            self._last_images[key] = unique_key
 
     def set_key_image(self, key: int, button: ButtonConfig):
         background = ACTIVE_COLOR if button.selected else NOT_ACTIVE_COLOR
         image = self.render_key(button.icon, button.label, background)
-        self._deck.set_key_image(key, image)
+
+        unique_key = ("render_key", (button.icon, button.label, background))
+        if self._last_images[key] != unique_key:
+            self._deck.set_key_image(key, image)
+            self._last_images[key] = unique_key
 
     def on_key_change(self, _, key: int, selected: bool):
         print(f"{self._deck.get_serial_number()} Key {key} = {selected}", flush=True)

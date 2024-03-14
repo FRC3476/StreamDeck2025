@@ -16,6 +16,7 @@ from controller.steam_deck import StreamDeckController
 DEFAULT_SERVER_IP = "10.17.1.2"
 DEFAULT_ASSETS_PATH = os.path.join(os.path.dirname(__file__), "../assets")
 NUM_BUTTONS = 15  # TODO: Base on deck or config
+MIN_LOOP_TIME = 0.02
 
 _running: bool = True
 
@@ -65,6 +66,7 @@ def main(running: Callable[[], bool]):
             with controller and controller:
                 output_publisher.send_connected(True)
 
+                last_time = time.time()
                 while running() and controller.is_open():
                     nt_config_source.update(config)
                     output_publisher.send_heartbeat()
@@ -72,7 +74,12 @@ def main(running: Callable[[], bool]):
                         controller.update()
                     except TransportError:
                         pass
-                    time.sleep(0.02)
+
+                    new_time = time.time()
+                    d_time = new_time - last_time
+                    if d_time < MIN_LOOP_TIME:
+                        time.sleep(MIN_LOOP_TIME - d_time)
+                    last_time = new_time
 
         output_publisher.send_connected(False)
         sent_search_message = False
