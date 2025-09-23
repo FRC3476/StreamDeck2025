@@ -13,9 +13,9 @@ from output.output_publisher import NTOutputPublisher
 
 from controller.stream_deck import StreamDeckController
 
-DEFAULT_SERVER_IP = "10.17.1.2"
+DEFAULT_SERVER_IP = "10.34.76.2"
 DEFAULT_ASSETS_PATH = os.path.join(os.path.dirname(__file__), "../assets")
-NUM_BUTTONS = 15  # TODO: Base on deck or config
+NUM_BUTTONS = 32  # TODO: Base on deck or config
 MIN_LOOP_TIME = 0.02
 
 _running: bool = True

@@ -1,5 +1,6 @@
 import time
 from dataclasses import dataclass
+from typing import override
 
 import ntcore
 from config.config_store import ConfigStore
@@ -34,7 +35,10 @@ class NTOutputPublisher(OutputPublisher):
         self._connected: ntcore.BooleanTopic
         self._heartbeat: ntcore.IntegerTopic
         self._buttons: list[ButtonPublisher]
-        self._start_time = time.time_ns() // 1_000_000
+        self._start_time = self.get_time()
+
+    def get_time(self) -> int:
+        return time.time_ns() //1_000_000
 
     def _ensure_init(self):
         if not self._init_complete:
@@ -69,14 +73,17 @@ class NTOutputPublisher(OutputPublisher):
                     .publish(NTOutputPublisher.PRESSED_PUBLISH_OPTIONS)
                 )
 
+    @override
     def send_connected(self, connected: bool):
         self._ensure_init()
         self._connected.set(connected)
 
+    @override
     def send_heartbeat(self):
         self._ensure_init()
-        self._heartbeat.set(time.time_ns() // 1_000_000 - self._start_time)
+        self._heartbeat.set(self.get_time() - self._start_time)
 
+    @override
     def send_button_selected(self, index: int, selected: bool):
         self._ensure_init()
         if index < 0 or index >= len(self._buttons) or index >= len(self._config.buttons):

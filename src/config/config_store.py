@@ -1,12 +1,17 @@
 from dataclasses import dataclass, field
-
+from typing import Optional
+import constants
 
 @dataclass
 class ButtonConfig:
     key: str = ""
     selected: bool = False
-    icon: str = ""
-    label: str = ""
+    active_background: str = constants.COLORS.BLACK
+    inactive_background: str = constants.COLORS.BLACK
+    active_foreground: str = constants.COLORS.WHITE
+    inactive_foreground: str = constants.COLORS.WHITE
+    active_text: str = ""
+    inactive_text: str = ""
 
 
 @dataclass
