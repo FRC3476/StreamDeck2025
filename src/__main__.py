@@ -11,7 +11,7 @@ from config.config_source import ConfigSource, EnvironmentConfigSource, NTConfig
 from config.config_store import ConfigStore
 from output.output_publisher import NTOutputPublisher
 
-from controller.steam_deck import StreamDeckController
+from controller.stream_deck import StreamDeckController
 
 DEFAULT_SERVER_IP = "10.17.1.2"
 DEFAULT_ASSETS_PATH = os.path.join(os.path.dirname(__file__), "../assets")
