@@ -143,9 +143,13 @@ class StreamDeckController:
 
     def set_key_image(self, key: int, button: ButtonConfig):
         if button.selected:
-            background, foreground, text = button.active_background, button.active_foreground, button.active_text
+            background = button.active_background if button.active_background != "" else constants.COLORS.DEFAULT_BACKGROUND
+            foreground = button.active_foreground if button.active_foreground != "" else constants.COLORS.DEFAULT_FOREGROUND
+            text = button.active_text
         else:
-            background, foreground, text = button.inactive_background, button.inactive_foreground, button.inactive_text
+            background = button.inactive_background if button.inactive_background != "" else constants.COLORS.DEFAULT_BACKGROUND
+            foreground = button.inactive_foreground if button.inactive_foreground != "" else constants.COLORS.DEFAULT_FOREGROUND
+            text = button.inactive_text
         image = self.render_key(background, foreground, text)
 
         unique_key = ("render_key", (background, foreground, text))
@@ -159,12 +163,24 @@ class StreamDeckController:
 
     def update(self):
         # TODO: Only send images on changes
-        if not self._config.remote_connected:
+        if not self._config.remote_connected and not self._config.remote_connected_sim:
             self.render_default_background()
             return
 
+
         for key in range(self._deck.key_count()):
-            button = self._config.buttons[key] if key < len(self._config.buttons) else None
+            if key < len(self._config.buttons):
+                if (self._config.buttons[key].active_background == "" and 
+                    self._config.buttons[key].inactive_background == "" and 
+                    self._config.buttons[key].active_foreground == "" and 
+                    self._config.buttons[key].inactive_foreground == "" and 
+                    self._config.buttons[key].active_text == "" and 
+                    self._config.buttons[key].inactive_text == ""):
+                    button = self._config.buttons_sim[key]
+                else:
+                    button = self._config.buttons[key]
+            else:
+                button = None
             if button is None:
                 self.set_key_empty(key)
             else:

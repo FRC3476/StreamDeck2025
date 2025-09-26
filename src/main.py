@@ -1,5 +1,7 @@
+import ctypes
 import os
 import signal
+import sys
 import time
 from typing import Callable
 
@@ -12,14 +14,26 @@ from config.config_store import ConfigStore
 from output.output_publisher import NTOutputPublisher
 
 from controller.stream_deck import StreamDeckController
+import constants
+from nt_instances import nt_instance, nt_instance_sim
+
+def resource_path(filename):
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, filename)
+    return filename
+
 
 DEFAULT_SERVER_IP = "10.34.76.2"
+# DEFAULT_SERVER_IP = "127.0.0.1"
+DEFAULT_SERVER_IP_SIM = "127.0.0.1" # for sim
 DEFAULT_ASSETS_PATH = os.path.join(os.path.dirname(__file__), "../assets")
 NUM_BUTTONS = 32  # TODO: Base on deck or config
 MIN_LOOP_TIME = 0.02
 
-_running: bool = True
+ctypes.CDLL(resource_path(os.path.join(DEFAULT_ASSETS_PATH, "dlls", "hidapi.dll")))
 
+_running: bool = True
+    
 
 def exit_gracefully(*_):
     global _running  # pylint: disable=global-statement
@@ -29,13 +43,19 @@ def exit_gracefully(*_):
 def main(running: Callable[[], bool]):
     config = ConfigStore()
     config.server_ip = DEFAULT_SERVER_IP
+    config.server_ip_sim = DEFAULT_SERVER_IP_SIM
     config.asset_directory = DEFAULT_ASSETS_PATH
     environment_config_source: ConfigSource = EnvironmentConfigSource()
     nt_config_source: ConfigSource = NTConfigSource(NUM_BUTTONS)
 
     environment_config_source.update(config)
-    ntcore.NetworkTableInstance.getDefault().setServer(config.server_ip)
-    ntcore.NetworkTableInstance.getDefault().startClient4(config.server_ip)
+    
+    nt_instance.setServer(config.server_ip)
+    nt_instance.startClient4(config.server_ip)
+
+    nt_instance_sim.setServer(config.server_ip_sim)
+    nt_instance_sim.startClient4(config.server_ip_sim)
+    
     nt_config_source.update(config)
 
     output_publisher = NTOutputPublisher(config, NUM_BUTTONS)

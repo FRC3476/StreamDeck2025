@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 KEY_SPACING = (36, 36)
 
-BACKGROUND_IMAGE = "JAWS_logo.png"
+BACKGROUND_IMAGE = "JAWS_logo.jpg"
 TEXT_HEIGHT_OFFSET = 5
 
 @dataclass
