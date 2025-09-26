@@ -5,7 +5,6 @@ import sys
 import time
 from typing import Callable
 
-import ntcore
 from StreamDeck.DeviceManager import DeviceManager
 from StreamDeck.Devices import StreamDeck
 from StreamDeck.Transport.Transport import TransportError
@@ -14,7 +13,6 @@ from config.config_store import ConfigStore
 from output.output_publisher import NTOutputPublisher
 
 from controller.stream_deck import StreamDeckController
-import constants
 from nt_instances import nt_instance, nt_instance_sim
 
 def resource_path(filename):
@@ -24,7 +22,6 @@ def resource_path(filename):
 
 
 DEFAULT_SERVER_IP = "10.34.76.2"
-# DEFAULT_SERVER_IP = "127.0.0.1"
 DEFAULT_SERVER_IP_SIM = "127.0.0.1" # for sim
 DEFAULT_ASSETS_PATH = os.path.join(os.path.dirname(__file__), "../assets")
 NUM_BUTTONS = 32  # TODO: Base on deck or config
