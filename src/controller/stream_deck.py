@@ -7,7 +7,6 @@ from StreamDeck.ImageHelpers import PILHelper
 from StreamDeck.Transport.Transport import TransportError
 from config.config_store import ButtonConfig, ConfigStore
 
-import util.image_util as image_util
 from output.output_publisher import OutputPublisher
 import constants
 
