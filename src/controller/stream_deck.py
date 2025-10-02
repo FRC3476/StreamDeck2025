@@ -22,8 +22,8 @@ class StreamDeckController:
         self._last_images: list[tuple[str, any]] = [("none", None)] * deck.key_count()
 
         font = font_manager.FontProperties(family="Arial")
-        file = font_manager.findfont(font)
-        self._default_font = ImageFont.truetype(file, 14)
+        self._font_file = font_manager.findfont(font)
+        self._default_font = ImageFont.truetype(self._font_file, 1)
 
     def __enter__(self):
         self.open()
@@ -120,12 +120,23 @@ class StreamDeckController:
             return PILHelper.to_native_key_format(self._deck, self._icon_cache[cache_key])
 
         image = PILHelper.create_key_image(self._deck, background=background)
+        
+        if text is None or text == "":
+            return PILHelper.to_native_key_format(self._deck, image)
+        font_fraction = 0.8
+
+        fontsize = 1
+        font = ImageFont.truetype(self._font_file, fontsize)
+        while font.getlength(text) < font_fraction*image.size[0]:
+            fontsize += 1
+            font = ImageFont.truetype(self._font_file, fontsize)
+        text_height = (font.getbbox(text)[3]-font.getbbox(text)[1])
 
         draw = ImageDraw.Draw(image)
         draw.text(
-            (image.width / 2, image.height - constants.TEXT_HEIGHT_OFFSET),
+            (image.width / 2, text_height + (image.height-text_height)/2),#image.height - constants.TEXT_HEIGHT_OFFSET),
             text=text,
-            font=self._default_font,
+            font=font,
             anchor="ms",
             fill=foreground,
         )
