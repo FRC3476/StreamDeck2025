@@ -1,7 +1,9 @@
 import os
 from dataclasses import dataclass
 import constants
-from nt_instances import nt_instance, nt_instance_sim
+from nt_instances import nt_instance
+if constants.DO_SIM:
+    from nt_instances import nt_instance_sim
 import ntcore
 from config.config_store import ButtonConfig, ConfigStore
 
@@ -14,7 +16,8 @@ class ConfigSource:
 class EnvironmentConfigSource(ConfigSource):
     def update(self, config_store: ConfigStore):
         config_store.server_ip = os.environ.get("SD_NT_SERVER_IP", config_store.server_ip)
-        config_store.server_ip_sim = os.environ.get("SD_NT_SERVER_IP_SIM", config_store.server_ip_sim)
+        if constants.DO_SIM:
+            config_store.server_ip_sim = os.environ.get("SD_NT_SERVER_IP_SIM", config_store.server_ip_sim)
         config_store.asset_directory = os.environ.get("SD_ASSET_DIRECTORY", config_store.asset_directory)
 
 @dataclass
@@ -34,12 +37,12 @@ class NTConfigSource(ConfigSource):
         self._init_complete = False
         self._num_buttons = num_buttons
         self._button_sources: list[ButtonSource] = []
-        self._button_sources_sim: list[ButtonSource] = []
+        if constants.DO_SIM:
+            self._button_sources_sim: list[ButtonSource] = []
 
     def update(self, config_store: ConfigStore):
         if not self._init_complete:
             deck_table = nt_instance.getTable("StreamDeck")
-            deck_table_sim = nt_instance_sim.getTable("StreamDeck")
             for i in range(self._num_buttons):
                 table = deck_table.getSubTable(f"Button/{i}")
                 self._button_sources.append(
@@ -54,18 +57,20 @@ class NTConfigSource(ConfigSource):
                         table.getStringTopic("InactiveText").subscribe(ButtonConfig.inactive_text),
                     )
                 )
-                table = deck_table_sim.getSubTable(f"Button/{i}")
-                self._button_sources_sim.append(
-                    ButtonSource(
-                        table.getStringTopic("Key").subscribe(ButtonConfig.key),
-                        table.getBooleanTopic("Selected").subscribe(False),
-                        table.getStringTopic("ActiveBackground").subscribe(ButtonConfig.active_background),
-                        table.getStringTopic("InactiveBackground").subscribe(ButtonConfig.inactive_background),
-                        table.getStringTopic("ActiveForeground").subscribe(ButtonConfig.active_foreground),
-                        table.getStringTopic("InactiveForeground").subscribe(ButtonConfig.inactive_foreground),
-                        table.getStringTopic("ActiveText").subscribe(ButtonConfig.active_text),
-                        table.getStringTopic("InactiveText").subscribe(ButtonConfig.inactive_text),
-                    )
+                if constants.DO_SIM:
+                    deck_table_sim = nt_instance_sim.getTable("StreamDeck")
+                    table = deck_table_sim.getSubTable(f"Button/{i}")
+                    self._button_sources_sim.append(
+                        ButtonSource(
+                            table.getStringTopic("Key").subscribe(ButtonConfig.key),
+                            table.getBooleanTopic("Selected").subscribe(False),
+                            table.getStringTopic("ActiveBackground").subscribe(ButtonConfig.active_background),
+                            table.getStringTopic("InactiveBackground").subscribe(ButtonConfig.inactive_background),
+                            table.getStringTopic("ActiveForeground").subscribe(ButtonConfig.active_foreground),
+                            table.getStringTopic("InactiveForeground").subscribe(ButtonConfig.inactive_foreground),
+                            table.getStringTopic("ActiveText").subscribe(ButtonConfig.active_text),
+                            table.getStringTopic("InactiveText").subscribe(ButtonConfig.inactive_text),
+                        )
                 )
             self._init_complete = True
 
@@ -84,17 +89,18 @@ class NTConfigSource(ConfigSource):
             for button in self._button_sources
         ]
 
-        config_store.remote_connected_sim = nt_instance_sim.isConnected()
-        config_store.buttons_sim = [
-            ButtonConfig(
-                button.key.get(),
-                button.selected.get(),
-                button.active_background.get(),
-                button.inactive_background.get(),
-                button.active_foreground.get(),
-                button.inactive_foreground.get(),
-                button.active_text.get(),
-                button.inactive_text.get()
-                )
-            for button in self._button_sources_sim
-        ]
+        if constants.DO_SIM:
+            config_store.remote_connected_sim = nt_instance_sim.isConnected()
+            config_store.buttons_sim = [
+                ButtonConfig(
+                    button.key.get(),
+                    button.selected.get(),
+                    button.active_background.get(),
+                    button.inactive_background.get(),
+                    button.active_foreground.get(),
+                    button.inactive_foreground.get(),
+                    button.active_text.get(),
+                    button.inactive_text.get()
+                    )
+                for button in self._button_sources_sim
+            ]

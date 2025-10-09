@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 KEY_SPACING = (36, 36)
+DO_SIM = False
 
 BACKGROUND_IMAGE = "JAWS_logo.jpg"
 TEXT_HEIGHT_OFFSET = 5

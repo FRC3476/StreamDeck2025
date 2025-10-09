@@ -11,9 +11,12 @@ from StreamDeck.Transport.Transport import TransportError
 from config.config_source import ConfigSource, EnvironmentConfigSource, NTConfigSource
 from config.config_store import ConfigStore
 from output.output_publisher import NTOutputPublisher
+import constants
 
 from controller.stream_deck import StreamDeckController
-from nt_instances import nt_instance, nt_instance_sim
+from nt_instances import nt_instance
+if constants.DO_SIM:
+    from nt_instances import nt_instance_sim
 
 def resource_path(filename):
     if hasattr(sys, "_MEIPASS"):
@@ -50,8 +53,9 @@ def main(running: Callable[[], bool]):
     nt_instance.setServer(config.server_ip)
     nt_instance.startClient4(config.server_ip)
 
-    nt_instance_sim.setServer(config.server_ip_sim)
-    nt_instance_sim.startClient4(config.server_ip_sim)
+    if constants.DO_SIM:
+        nt_instance_sim.setServer(config.server_ip_sim)
+        nt_instance_sim.startClient4(config.server_ip_sim)
     
     nt_config_source.update(config)
 

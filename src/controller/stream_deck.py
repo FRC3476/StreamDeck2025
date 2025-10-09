@@ -185,7 +185,8 @@ class StreamDeckController:
                     self._config.buttons[key].active_foreground == "" and 
                     self._config.buttons[key].inactive_foreground == "" and 
                     self._config.buttons[key].active_text == "" and 
-                    self._config.buttons[key].inactive_text == ""):
+                    self._config.buttons[key].inactive_text == ""
+                    and constants.DO_SIM):
                     button = self._config.buttons_sim[key]
                 else:
                     button = self._config.buttons[key]
