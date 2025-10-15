@@ -18,7 +18,6 @@ class EnvironmentConfigSource(ConfigSource):
         config_store.server_ip = os.environ.get("SD_NT_SERVER_IP", config_store.server_ip)
         if constants.DO_SIM:
             config_store.server_ip_sim = os.environ.get("SD_NT_SERVER_IP_SIM", config_store.server_ip_sim)
-        config_store.asset_directory = os.environ.get("SD_ASSET_DIRECTORY", config_store.asset_directory)
 
 @dataclass
 class ButtonSource:

@@ -44,7 +44,6 @@ def main(running: Callable[[], bool]):
     config = ConfigStore()
     config.server_ip = DEFAULT_SERVER_IP
     config.server_ip_sim = DEFAULT_SERVER_IP_SIM
-    config.asset_directory = DEFAULT_ASSETS_PATH
     environment_config_source: ConfigSource = EnvironmentConfigSource()
     nt_config_source: ConfigSource = NTConfigSource(NUM_BUTTONS)
 

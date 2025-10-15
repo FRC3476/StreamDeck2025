@@ -15,7 +15,6 @@ class ButtonConfig:
 class ConfigStore:
     server_ip: str = ""
     server_ip_sim: str = ""
-    asset_directory: str = ""
     remote_connected: bool = False
     remote_connected_sim: bool = False
     buttons: list[ButtonConfig] = field(default_factory=lambda: [])
