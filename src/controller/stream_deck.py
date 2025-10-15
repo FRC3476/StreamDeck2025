@@ -6,6 +6,7 @@ from StreamDeck.Devices.StreamDeck import StreamDeck
 from StreamDeck.ImageHelpers import PILHelper
 from StreamDeck.Transport.Transport import TransportError
 from config.config_store import ButtonConfig, ConfigStore
+from typing import Optional
 
 from output.output_publisher import OutputPublisher
 import constants
@@ -168,6 +169,7 @@ class StreamDeckController:
             self._last_images[key] = unique_key
 
     def on_key_change(self, _, key: int, selected: bool):
+        key += NUM_BUTTONS * self._config.page
         print(f"{self._deck.get_serial_number()} Key {key} = {selected}", flush=True)
         self._output_publisher.send_button_selected(key, selected)
 
@@ -177,8 +179,24 @@ class StreamDeckController:
             self.render_default_background()
             return
 
+        page = self._config.page
+        page_button: Optional[ButtonConfig] = None
+        if self._config.page_button is not None and not (
+            self._config.page_button.active_background == "" and 
+            self._config.page_button.inactive_background == "" and 
+            self._config.page_button.active_foreground == "" and 
+            self._config.page_button.inactive_foreground == "" and 
+            self._config.page_button.active_text == "" and 
+            self._config.page_button.inactive_text == ""
+            and constants.DO_SIM): #page_button exists and isn't empty with sim on
+            page_button = self._config.page_button
+        elif self._config.page_button is None and self._config.page_button_sim is not None and constants.DO_SIM: #only sim page button exists
+            page_button = self._config.page_button_sim
 
-        for key in range(self._deck.key_count()):
+        if page_button is not None:    
+            self.set_key_image(self._config.page_button_sim.key, self._config.page_button_sim)
+        
+        for key in range(NUM_BUTTONS * page , NUM_BUTTONS * (page + 1)):
             if key < len(self._config.buttons):
                 if (self._config.buttons[key].active_background == "" and 
                     self._config.buttons[key].inactive_background == "" and 
@@ -192,10 +210,13 @@ class StreamDeckController:
                     button = self._config.buttons[key]
             else:
                 button = None
-            if button is None:
-                self.set_key_empty(key)
+            deck_key = key - NUM_BUTTONS * page
+            if page_button is not None and deck_key == page_button.key:
+                pass 
+            elif button is None:
+                self.set_key_empty(deck_key)
             else:
-                self.set_key_image(key, button)
+                self.set_key_image(deck_key, button)
 
     def is_open(self) -> bool:
         return self._deck.is_open()

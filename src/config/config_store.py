@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Optional
 
 @dataclass
 class ButtonConfig:
@@ -19,3 +20,6 @@ class ConfigStore:
     remote_connected_sim: bool = False
     buttons: list[ButtonConfig] = field(default_factory=lambda: [])
     buttons_sim: list[ButtonConfig] = field(default_factory=lambda: [])
+    page: int = 0
+    page_button: Optional[ButtonConfig] = None
+    page_button_sim: Optional[ButtonConfig] = None
