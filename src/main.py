@@ -27,7 +27,7 @@ def resource_path(filename):
 DEFAULT_SERVER_IP = "10.34.76.2"
 DEFAULT_SERVER_IP_SIM = "127.0.0.1" # for sim
 DEFAULT_ASSETS_PATH = os.path.join(os.path.dirname(__file__), "../assets")
-MIN_LOOP_TIME = 0.02
+MIN_LOOP_TIME = 0.1
 
 ctypes.CDLL(resource_path(os.path.join(DEFAULT_ASSETS_PATH, "dlls", "hidapi.dll")))
 

@@ -22,4 +22,6 @@ class ConfigStore:
     buttons_sim: list[ButtonConfig] = field(default_factory=lambda: [])
     page: int = 0
     page_button: Optional[ButtonConfig] = None
+    page_button_index: Optional[int] = None
     page_button_sim: Optional[ButtonConfig] = None
+    page_button_index_sim: Optional[int] = None

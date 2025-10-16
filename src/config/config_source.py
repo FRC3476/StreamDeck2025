@@ -35,31 +35,24 @@ class ButtonSource:
 class NTConfigSource(ConfigSource):
     def __init__(self, num_buttons: int):
         self._init_complete = False
+        self._found_page_button = False
+        self._found_page_button_sim = False
         self._num_buttons = num_buttons
         self._button_sources: list[ButtonSource] = []
-        self._page: int = 0
+        self._page_source: Optional[ntcore.IntegerSubscriber] = None
         self._page_button_source: Optional[ButtonSource] = None
+        self._page_button_index: Optional[int] = None
         if constants.DO_SIM:
             self._button_sources_sim: list[ButtonSource] = []
             self._page_button_source_sim: Optional[ButtonSource] = None
+            self._page_button_index_sim: Optional[int] = None
 
     def update(self, config_store: ConfigStore):
         if not self._init_complete:
             deck_table = nt_instance.getTable("StreamDeck")
-            self._page = deck_table.getIntegerTopic("Page").subscribe(0)
+            self._page_source = deck_table.getIntegerTopic("Page").subscribe(0)
             for i in range(self._num_buttons):
                 table = deck_table.getSubTable(f"Button/{i}")
-                if table.getSubTable(f"Button/{i}").getBooleanTopic("IsPageButton").subscribe(False).get():
-                    self._page_button_source = ButtonSource(
-                        table.getStringTopic("Key").subscribe(ButtonConfig.key),
-                        table.getBooleanTopic("Selected").subscribe(False),
-                        table.getStringTopic("ActiveBackground").subscribe(ButtonConfig.active_background),
-                        table.getStringTopic("InactiveBackground").subscribe(ButtonConfig.inactive_background),
-                        table.getStringTopic("ActiveForeground").subscribe(ButtonConfig.active_foreground),
-                        table.getStringTopic("InactiveForeground").subscribe(ButtonConfig.inactive_foreground),
-                        table.getStringTopic("ActiveText").subscribe(ButtonConfig.active_text),
-                        table.getStringTopic("InactiveText").subscribe(ButtonConfig.inactive_text),
-                    )
                 self._button_sources.append(ButtonSource(
                     table.getStringTopic("Key").subscribe(ButtonConfig.key),
                     table.getBooleanTopic("Selected").subscribe(False),
@@ -97,6 +90,44 @@ class NTConfigSource(ConfigSource):
                     )
                 )
             self._init_complete = True
+        if not self._found_page_button:
+            deck_table = nt_instance.getTable("StreamDeck")
+            for i in range(self._num_buttons):
+                table = deck_table.getSubTable(f"Button/{i}")
+                if table.getBooleanTopic("IsPageButton").subscribe(False).get():
+                    self._page_button_source = ButtonSource(
+                        table.getStringTopic("Key").subscribe(ButtonConfig.key),
+                        table.getBooleanTopic("Selected").subscribe(False),
+                        table.getStringTopic("ActiveBackground").subscribe(ButtonConfig.active_background),
+                        table.getStringTopic("InactiveBackground").subscribe(ButtonConfig.inactive_background),
+                        table.getStringTopic("ActiveForeground").subscribe(ButtonConfig.active_foreground),
+                        table.getStringTopic("InactiveForeground").subscribe(ButtonConfig.inactive_foreground),
+                        table.getStringTopic("ActiveText").subscribe(ButtonConfig.active_text),
+                        table.getStringTopic("InactiveText").subscribe(ButtonConfig.inactive_text),
+                    )
+                    self._page_button_index = i
+                    self._found_page_button = True
+                    break
+        if (not self._found_page_button_sim) and constants.DO_SIM:
+            deck_table_sim = nt_instance_sim.getTable("StreamDeck")
+            for i in range(self._num_buttons):
+                table = deck_table_sim.getSubTable(f"Button/{i}")
+                if table.getBooleanTopic("IsPageButton").subscribe(False).get():
+                    self._page_button_source_sim = ButtonSource(
+                        table.getStringTopic("Key").subscribe(ButtonConfig.key),
+                        table.getBooleanTopic("Selected").subscribe(False),
+                        table.getStringTopic("ActiveBackground").subscribe(ButtonConfig.active_background),
+                        table.getStringTopic("InactiveBackground").subscribe(ButtonConfig.inactive_background),
+                        table.getStringTopic("ActiveForeground").subscribe(ButtonConfig.active_foreground),
+                        table.getStringTopic("InactiveForeground").subscribe(ButtonConfig.inactive_foreground),
+                        table.getStringTopic("ActiveText").subscribe(ButtonConfig.active_text),
+                        table.getStringTopic("InactiveText").subscribe(ButtonConfig.inactive_text),
+                    )
+                    self._page_button_index_sim = i
+                    self._found_page_button_sim = True
+                    break
+
+        config_store.page = self._page_source.get()
 
         config_store.remote_connected = nt_instance.isConnected()
         config_store.buttons = [
@@ -112,8 +143,18 @@ class NTConfigSource(ConfigSource):
                 )
             for button in self._button_sources
         ]
-
-        config_store.page_button = self._page_button_source
+        if self._page_button_source is not None:
+            config_store.page_button_index = self._page_button_index
+            config_store.page_button = ButtonConfig(
+                self._page_button_source.key.get(),
+                self._page_button_source.selected.get(),
+                self._page_button_source.active_background.get(),
+                self._page_button_source.inactive_background.get(),
+                self._page_button_source.active_foreground.get(),
+                self._page_button_source.inactive_foreground.get(),
+                self._page_button_source.active_text.get(),
+                self._page_button_source.inactive_text.get()
+            )
 
         if constants.DO_SIM:
             config_store.remote_connected_sim = nt_instance_sim.isConnected()
@@ -130,7 +171,19 @@ class NTConfigSource(ConfigSource):
                     )
                 for button in self._button_sources_sim
             ]
-            config_store.page_button_sim = self._page_button_source_sim
+            
+            if self._page_button_source_sim is not None:
+                config_store.page_button_index_sim = self._page_button_index_sim
+                config_store.page_button_sim = ButtonConfig(
+                    self._page_button_source_sim.key.get(),
+                    self._page_button_source_sim.selected.get(),
+                    self._page_button_source_sim.active_background.get(),
+                    self._page_button_source_sim.inactive_background.get(),
+                    self._page_button_source_sim.active_foreground.get(),
+                    self._page_button_source_sim.inactive_foreground.get(),
+                    self._page_button_source_sim.active_text.get(),
+                    self._page_button_source_sim.inactive_text.get()
+                )
 
     def cleanup(self):
         """Close all subscribers to prevent resource leaks"""
@@ -149,6 +202,16 @@ class NTConfigSource(ConfigSource):
                 button_source.active_text.close()
                 button_source.inactive_text.close()
             
+            if self._page_button_source is not None:
+                self._page_button_source.key.close()
+                self._page_button_source.selected.close()
+                self._page_button_source.active_background.close()
+                self._page_button_source.inactive_background.close()
+                self._page_button_source.active_foreground.close()
+                self._page_button_source.inactive_foreground.close()
+                self._page_button_source.active_text.close()
+                self._page_button_source.inactive_text.close()
+
             if constants.DO_SIM:
                 # Close all sim button subscribers
                 for button_source in self._button_sources_sim:
@@ -160,5 +223,15 @@ class NTConfigSource(ConfigSource):
                     button_source.inactive_foreground.close()
                     button_source.active_text.close()
                     button_source.inactive_text.close()
+                    
+                if self._page_button_source_sim is not None:
+                    self._page_button_source_sim.key.close()
+                    self._page_button_source_sim.selected.close()
+                    self._page_button_source_sim.active_background.close()
+                    self._page_button_source_sim.inactive_background.close()
+                    self._page_button_source_sim.active_foreground.close()
+                    self._page_button_source_sim.inactive_foreground.close()
+                    self._page_button_source_sim.active_text.close()
+                    self._page_button_source_sim.inactive_text.close()
         except Exception as e:
             print(f"Error during NTConfigSource cleanup: {e}")

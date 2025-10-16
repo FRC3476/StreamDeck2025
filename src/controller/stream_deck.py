@@ -181,6 +181,8 @@ class StreamDeckController:
 
         page = self._config.page
         page_button: Optional[ButtonConfig] = None
+        page_button_index: Optional[int] = None
+        # print(self._config,page, self._config.page_button)
         if self._config.page_button is not None and not (
             self._config.page_button.active_background == "" and 
             self._config.page_button.inactive_background == "" and 
@@ -190,13 +192,17 @@ class StreamDeckController:
             self._config.page_button.inactive_text == ""
             and constants.DO_SIM): #page_button exists and isn't empty with sim on
             page_button = self._config.page_button
+            page_button_index = self._config.page_button_index
         elif self._config.page_button is None and self._config.page_button_sim is not None and constants.DO_SIM: #only sim page button exists
             page_button = self._config.page_button_sim
+            page_button_index = self._config.page_button_index_sim
 
         if page_button is not None:
-            self.set_key_image(page_button.key, page_button)
+            self.set_key_image(page_button_index, page_button)
         
         for key in range(constants.NUM_BUTTONS * page , constants.NUM_BUTTONS * (page + 1)):
+            if page_button_index is not None and key % constants.NUM_BUTTONS == page_button_index:
+                continue  # skip buttons that overlap the page button
             if key < len(self._config.buttons):
                 if (self._config.buttons[key].active_background == "" and 
                     self._config.buttons[key].inactive_background == "" and 
