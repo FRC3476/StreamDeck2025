@@ -169,7 +169,7 @@ class StreamDeckController:
             self._last_images[key] = unique_key
 
     def on_key_change(self, _, key: int, selected: bool):
-        key += NUM_BUTTONS * self._config.page
+        key += constants.NUM_BUTTONS * self._config.page
         print(f"{self._deck.get_serial_number()} Key {key} = {selected}", flush=True)
         self._output_publisher.send_button_selected(key, selected)
 
@@ -193,10 +193,10 @@ class StreamDeckController:
         elif self._config.page_button is None and self._config.page_button_sim is not None and constants.DO_SIM: #only sim page button exists
             page_button = self._config.page_button_sim
 
-        if page_button is not None:    
-            self.set_key_image(self._config.page_button_sim.key, self._config.page_button_sim)
+        if page_button is not None:
+            self.set_key_image(page_button.key, page_button)
         
-        for key in range(NUM_BUTTONS * page , NUM_BUTTONS * (page + 1)):
+        for key in range(constants.NUM_BUTTONS * page , constants.NUM_BUTTONS * (page + 1)):
             if key < len(self._config.buttons):
                 if (self._config.buttons[key].active_background == "" and 
                     self._config.buttons[key].inactive_background == "" and 
@@ -210,7 +210,7 @@ class StreamDeckController:
                     button = self._config.buttons[key]
             else:
                 button = None
-            deck_key = key - NUM_BUTTONS * page
+            deck_key = key - constants.NUM_BUTTONS * page
             if page_button is not None and deck_key == page_button.key:
                 pass 
             elif button is None:

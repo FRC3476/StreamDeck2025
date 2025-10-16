@@ -27,8 +27,6 @@ def resource_path(filename):
 DEFAULT_SERVER_IP = "10.34.76.2"
 DEFAULT_SERVER_IP_SIM = "127.0.0.1" # for sim
 DEFAULT_ASSETS_PATH = os.path.join(os.path.dirname(__file__), "../assets")
-NUM_BUTTONS = 32  # TODO: Base on deck or config
-NUM_PAGES = 2  # TODO: Base on config
 MIN_LOOP_TIME = 0.02
 
 ctypes.CDLL(resource_path(os.path.join(DEFAULT_ASSETS_PATH, "dlls", "hidapi.dll")))
@@ -56,10 +54,10 @@ def main(running: Callable[[], bool]):
         nt_instance_sim.setServer(config.server_ip_sim)
         nt_instance_sim.startClient4(config.server_ip_sim)
     
-    nt_config_source: ConfigSource = NTConfigSource(NUM_BUTTONS*NUM_PAGES)
+    nt_config_source: ConfigSource = NTConfigSource(constants.NUM_BUTTONS*constants.NUM_PAGES)
     nt_config_source.update(config)
 
-    output_publisher = NTOutputPublisher(config, NUM_BUTTONS*NUM_PAGES)
+    output_publisher = NTOutputPublisher(config, constants.NUM_BUTTONS*constants.NUM_PAGES)
 
     sent_search_message = False
     while running():

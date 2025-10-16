@@ -6,6 +6,9 @@ DO_SIM = False
 BACKGROUND_IMAGE = "JAWS_logo.jpg"
 TEXT_HEIGHT_OFFSET = 5
 
+NUM_BUTTONS = 32  # TODO: from deck
+NUM_PAGES = 2  # TODO: from robot code
+
 @dataclass
 class COLORS:
     CO_ORANGE = "#FF7A1C"

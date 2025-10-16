@@ -49,7 +49,7 @@ class NTConfigSource(ConfigSource):
             self._page = deck_table.getIntegerTopic("Page").subscribe(0)
             for i in range(self._num_buttons):
                 table = deck_table.getSubTable(f"Button/{i}")
-                if table.getSubTable(f"Button/{i}").getBooleanTopic("IsPageButton").subscribe(false):
+                if table.getSubTable(f"Button/{i}").getBooleanTopic("IsPageButton").subscribe(False).get():
                     self._page_button_source = ButtonSource(
                         table.getStringTopic("Key").subscribe(ButtonConfig.key),
                         table.getBooleanTopic("Selected").subscribe(False),
@@ -74,7 +74,7 @@ class NTConfigSource(ConfigSource):
                 if constants.DO_SIM:
                     deck_table_sim = nt_instance_sim.getTable("StreamDeck")
                     table = deck_table_sim.getSubTable(f"Button/{i}")
-                    if table.getSubTable(f"Button/{i}").getBooleanTopic("IsPageButton").subscribe(false):
+                    if table.getSubTable(f"Button/{i}").getBooleanTopic("IsPageButton").subscribe(False).get():
                         self._page_button_source_sim = ButtonSource(
                             table.getStringTopic("Key").subscribe(ButtonConfig.key),
                             table.getBooleanTopic("Selected").subscribe(False),
