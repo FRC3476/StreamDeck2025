@@ -95,6 +95,9 @@ class NTOutputPublisher(OutputPublisher):
 
         for config, pub in zip(self._config.buttons, self._buttons):
             if config.key and (config.key != pub.key):
+                # Close old publisher before creating new one to prevent resource leak
+                if pub.selected:
+                    pub.selected.close()
                 pub.key = config.key
                 pub.selected = (
                     nt_instance
@@ -104,6 +107,9 @@ class NTOutputPublisher(OutputPublisher):
         if constants.DO_SIM:
             for config, pub in zip(self._config.buttons_sim, self._buttons_sim):
                 if config.key and (config.key != pub.key):
+                    # Close old publisher before creating new one to prevent resource leak
+                    if pub.selected:
+                        pub.selected.close()
                     pub.key = config.key
                     pub.selected = (
                         nt_instance_sim
@@ -145,3 +151,34 @@ class NTOutputPublisher(OutputPublisher):
                 if pub_sim.selected:
                     print(f"publishing {selected} for button {index} [SIM]")
                     pub_sim.selected.set(selected)
+
+    def cleanup(self):
+        """Close all publishers to prevent resource leaks"""
+        if not self._init_complete:
+            return
+        
+        try:
+            # Close all button publishers
+            for pub in self._buttons:
+                if pub.selected:
+                    pub.selected.close()
+            
+            # Close connected and heartbeat publishers
+            if self._connected:
+                self._connected.close()
+            if self._heartbeat:
+                self._heartbeat.close()
+            
+            if constants.DO_SIM:
+                # Close all sim button publishers
+                for pub in self._buttons_sim:
+                    if pub.selected:
+                        pub.selected.close()
+                
+                # Close sim connected and heartbeat publishers
+                if self._connected_sim:
+                    self._connected_sim.close()
+                if self._heartbeat_sim:
+                    self._heartbeat_sim.close()
+        except Exception as e:
+            print(f"Error during NTOutputPublisher cleanup: {e}")

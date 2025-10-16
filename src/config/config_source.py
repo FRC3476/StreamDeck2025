@@ -131,3 +131,34 @@ class NTConfigSource(ConfigSource):
                 for button in self._button_sources_sim
             ]
             config_store.page_button_sim = self._page_button_source_sim
+
+    def cleanup(self):
+        """Close all subscribers to prevent resource leaks"""
+        if not self._init_complete:
+            return
+        
+        try:
+            # Close all button subscribers
+            for button_source in self._button_sources:
+                button_source.key.close()
+                button_source.selected.close()
+                button_source.active_background.close()
+                button_source.inactive_background.close()
+                button_source.active_foreground.close()
+                button_source.inactive_foreground.close()
+                button_source.active_text.close()
+                button_source.inactive_text.close()
+            
+            if constants.DO_SIM:
+                # Close all sim button subscribers
+                for button_source in self._button_sources_sim:
+                    button_source.key.close()
+                    button_source.selected.close()
+                    button_source.active_background.close()
+                    button_source.inactive_background.close()
+                    button_source.active_foreground.close()
+                    button_source.inactive_foreground.close()
+                    button_source.active_text.close()
+                    button_source.inactive_text.close()
+        except Exception as e:
+            print(f"Error during NTConfigSource cleanup: {e}")
