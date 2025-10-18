@@ -61,49 +61,69 @@ def main(running: Callable[[], bool]):
 
     output_publisher = NTOutputPublisher(config, NUM_BUTTONS)
 
-    sent_search_message = False
-    while running():
-        if not sent_search_message:
-            print("Searching for Stream Deck...")
-            sent_search_message = True
+    try:
+        sent_search_message = False
+        while running():
+            if not sent_search_message:
+                print("Searching for Stream Deck...")
+                sent_search_message = True
 
-        decks: list[StreamDeck.StreamDeck] = DeviceManager().enumerate()
+            decks: list[StreamDeck.StreamDeck] = DeviceManager().enumerate()
 
-        nt_config_source.update(config)
-        output_publisher.send_heartbeat()
+            nt_config_source.update(config)
+            output_publisher.send_heartbeat()
 
-        if not decks:
-            output_publisher.send_connected(False)
-            time.sleep(1)
-            continue
-
-        for deck in decks:
-            if not deck.is_visual():
+            if not decks:
+                output_publisher.send_connected(False)
+                time.sleep(1)
                 continue
 
-            print(f"Creating controller for {deck.deck_type()}")
+            for deck in decks:
+                if not deck.is_visual():
+                    continue
 
-            controller = StreamDeckController(deck, config, output_publisher, DEFAULT_ASSETS_PATH)
-            with controller and controller:
-                output_publisher.send_connected(True)
+                print(f"Creating controller for {deck.deck_type()}")
 
-                last_time = time.time()
-                while running() and controller.is_open():
-                    nt_config_source.update(config)
-                    output_publisher.send_heartbeat()
-                    try:
-                        controller.update()
-                    except TransportError:
-                        pass
+                controller = StreamDeckController(deck, config, output_publisher, DEFAULT_ASSETS_PATH)
+                with controller and controller:
+                    output_publisher.send_connected(True)
 
-                    new_time = time.time()
-                    d_time = new_time - last_time
-                    if d_time < MIN_LOOP_TIME:
-                        time.sleep(MIN_LOOP_TIME - d_time)
-                    last_time = new_time
+                    last_time = time.time()
+                    while running() and controller.is_open():
+                        nt_config_source.update(config)
+                        output_publisher.send_heartbeat()
+                        try:
+                            controller.update()
+                        except TransportError:
+                            pass
 
-        output_publisher.send_connected(False)
-        sent_search_message = False
+                        new_time = time.time()
+                        d_time = new_time - last_time
+                        if d_time < MIN_LOOP_TIME:
+                            time.sleep(MIN_LOOP_TIME - d_time)
+                        last_time = new_time
+
+            output_publisher.send_connected(False)
+            sent_search_message = False
+    finally:
+        # Clean up resources to prevent connection leaks
+        print("Cleaning up NetworkTables resources...")
+        output_publisher.cleanup()
+        nt_config_source.cleanup()
+        
+        # Stop NetworkTables clients
+        try:
+            nt_instance.stopClient()
+        except Exception as e:
+            print(f"Error stopping NT instance: {e}")
+        
+        if constants.DO_SIM:
+            try:
+                nt_instance_sim.stopClient()
+            except Exception as e:
+                print(f"Error stopping NT sim instance: {e}")
+        
+        print("Cleanup complete.")
 
 
 if __name__ == "__main__":
