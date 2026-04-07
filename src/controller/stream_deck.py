@@ -125,20 +125,23 @@ class StreamDeckController:
         font_fraction = 0.8
 
         fontsize = 1
+        draw = ImageDraw.Draw(image)
         font = ImageFont.truetype(self._font_file, fontsize)
-        while font.getlength(text) < font_fraction*image.size[0]:
+        l, t, r, b = draw.multiline_textbbox((0,0), text, font)
+        while r-l < font_fraction*image.size[0] and b-t < font_fraction*image.size[1]:
             fontsize += 1
             font = ImageFont.truetype(self._font_file, fontsize)
-        text_height = (font.getbbox(text)[3]-font.getbbox(text)[1])
+            l, t, r, b = draw.multiline_textbbox((0,0), text, font)
+        
+        draw.multiline_text((image.width/2, image.height/2), text, fill=foreground, font=font, anchor="mm", align="center")
 
-        draw = ImageDraw.Draw(image)
-        draw.text(
-            (image.width / 2, text_height + (image.height-text_height)/2),#image.height - constants.TEXT_HEIGHT_OFFSET),
-            text=text,
-            font=font,
-            anchor="ms",
-            fill=foreground,
-        )
+        # draw.text(
+        #     (image.width / 2, b-t + (image.height-(b-t))/2),#image.height - constants.TEXT_HEIGHT_OFFSET),
+        #     text=text,
+        #     font=font,
+        #     anchor="ms",
+        #     fill=foreground,
+        # )
 
         self._icon_cache[cache_key] = image
         return PILHelper.to_native_key_format(self._deck, image)
