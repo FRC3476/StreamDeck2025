@@ -66,7 +66,7 @@ class NTOutputPublisher(OutputPublisher):
                         key,
                         (
                             nt_instance
-                            .getBooleanTopic(key)
+                            .getBooleanTopic("StreamDeck/"+key)
                             .publish(NTOutputPublisher.PRESSED_PUBLISH_OPTIONS)
                             if key
                             else None
@@ -83,7 +83,7 @@ class NTOutputPublisher(OutputPublisher):
                             key,
                             (
                                 nt_instance_sim
-                                .getBooleanTopic(key)
+                                .getBooleanTopic("StreamDeck/"+key)
                                 .publish(NTOutputPublisher.PRESSED_PUBLISH_OPTIONS)
                                 if key
                                 else None
@@ -101,7 +101,7 @@ class NTOutputPublisher(OutputPublisher):
                 pub.key = config.key
                 pub.selected = (
                     nt_instance
-                    .getBooleanTopic(pub.key)
+                    .getBooleanTopic("StreamDeck/"+pub.key)
                     .publish(NTOutputPublisher.PRESSED_PUBLISH_OPTIONS)
                 )
         if constants.DO_SIM:
@@ -113,7 +113,7 @@ class NTOutputPublisher(OutputPublisher):
                     pub.key = config.key
                     pub.selected = (
                         nt_instance_sim
-                        .getBooleanTopic(pub.key)
+                        .getBooleanTopic("StreamDeck/"+pub.key)
                         .publish(NTOutputPublisher.PRESSED_PUBLISH_OPTIONS)
                     )
 
