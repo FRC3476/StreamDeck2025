@@ -22,14 +22,8 @@ class EnvironmentConfigSource(ConfigSource):
 
 @dataclass
 class ButtonSource:
-    key: ntcore.StringSubscriber
+    appearance: ntcore.StringSubscriber
     selected: ntcore.BooleanSubscriber
-    active_background: ntcore.StringSubscriber
-    inactive_background: ntcore.StringSubscriber
-    active_foreground: ntcore.StringSubscriber
-    inactive_foreground: ntcore.StringSubscriber
-    active_text: ntcore.StringSubscriber
-    inactive_text: ntcore.StringSubscriber
 
 
 class NTConfigSource(ConfigSource):
@@ -47,14 +41,8 @@ class NTConfigSource(ConfigSource):
                 table = deck_table.getSubTable(f"Button/{i}")
                 self._button_sources.append(
                     ButtonSource(
-                        table.getStringTopic("Key").subscribe(ButtonConfig.key),
+                        table.getStringTopic("Appearance").subscribe(""+"$&$"+""+"$&$"+""+"$&$"+""+"$&$"+""+"$&$"+""+"$&$"+""),
                         table.getBooleanTopic("Selected").subscribe(False),
-                        table.getStringTopic("ActiveBackground").subscribe(ButtonConfig.active_background),
-                        table.getStringTopic("InactiveBackground").subscribe(ButtonConfig.inactive_background),
-                        table.getStringTopic("ActiveForeground").subscribe(ButtonConfig.active_foreground),
-                        table.getStringTopic("InactiveForeground").subscribe(ButtonConfig.inactive_foreground),
-                        table.getStringTopic("ActiveText").subscribe(ButtonConfig.active_text),
-                        table.getStringTopic("InactiveText").subscribe(ButtonConfig.inactive_text),
                     )
                 )
                 if constants.DO_SIM:
@@ -62,48 +50,30 @@ class NTConfigSource(ConfigSource):
                     table = deck_table_sim.getSubTable(f"Button/{i}")
                     self._button_sources_sim.append(
                         ButtonSource(
-                            table.getStringTopic("Key").subscribe(ButtonConfig.key),
+                            table.getStringTopic("Appearance").subscribe(""+"$&$"+""+"$&$"+""+"$&$"+""+"$&$"+""+"$&$"+""+"$&$"+""),
                             table.getBooleanTopic("Selected").subscribe(False),
-                            table.getStringTopic("ActiveBackground").subscribe(ButtonConfig.active_background),
-                            table.getStringTopic("InactiveBackground").subscribe(ButtonConfig.inactive_background),
-                            table.getStringTopic("ActiveForeground").subscribe(ButtonConfig.active_foreground),
-                            table.getStringTopic("InactiveForeground").subscribe(ButtonConfig.inactive_foreground),
-                            table.getStringTopic("ActiveText").subscribe(ButtonConfig.active_text),
-                            table.getStringTopic("InactiveText").subscribe(ButtonConfig.inactive_text),
                         )
                 )
             self._init_complete = True
 
         config_store.remote_connected = nt_instance.isConnected()
-        config_store.buttons = [
-            ButtonConfig(
-                button.key.get(),
-                button.selected.get(),
-                button.active_background.get(),
-                button.inactive_background.get(),
-                button.active_foreground.get(),
-                button.inactive_foreground.get(),
-                button.active_text.get(),
-                button.inactive_text.get()
-                )
-            for button in self._button_sources
-        ]
+
+        buttons = []
+        for button in self._button_sources:
+            appearance = button.appearance.get()
+            key, active_background, inactive_background, active_foreground, inactive_foreground, active_text, inactive_text = appearance.split("$&$")
+            buttons.append(ButtonConfig(key, button.selected.get(), active_background, inactive_background, active_foreground, inactive_foreground, active_text, inactive_text))
+        config_store.buttons = buttons
 
         if constants.DO_SIM:
             config_store.remote_connected_sim = nt_instance_sim.isConnected()
-            config_store.buttons_sim = [
-                ButtonConfig(
-                    button.key.get(),
-                    button.selected.get(),
-                    button.active_background.get(),
-                    button.inactive_background.get(),
-                    button.active_foreground.get(),
-                    button.inactive_foreground.get(),
-                    button.active_text.get(),
-                    button.inactive_text.get()
-                    )
-                for button in self._button_sources_sim
-            ]
+
+            buttons = []
+            for button in self._button_sources_sim:
+                appearance = button.appearance.get()
+                key, active_background, inactive_background, active_foreground, inactive_foreground, active_text, inactive_text = appearance.split("$&$")
+                buttons.append(ButtonConfig(key, button.selected.get(), active_background, inactive_background, active_foreground, inactive_foreground, active_text, inactive_text))
+            config_store.buttons_sim = buttons
 
     def cleanup(self):
         """Close all subscribers to prevent resource leaks"""
@@ -113,25 +83,13 @@ class NTConfigSource(ConfigSource):
         try:
             # Close all button subscribers
             for button_source in self._button_sources:
-                button_source.key.close()
+                button_source.appearance.close()
                 button_source.selected.close()
-                button_source.active_background.close()
-                button_source.inactive_background.close()
-                button_source.active_foreground.close()
-                button_source.inactive_foreground.close()
-                button_source.active_text.close()
-                button_source.inactive_text.close()
             
             if constants.DO_SIM:
                 # Close all sim button subscribers
                 for button_source in self._button_sources_sim:
-                    button_source.key.close()
+                    button_source.appearance.close()
                     button_source.selected.close()
-                    button_source.active_background.close()
-                    button_source.inactive_background.close()
-                    button_source.active_foreground.close()
-                    button_source.inactive_foreground.close()
-                    button_source.active_text.close()
-                    button_source.inactive_text.close()
         except Exception as e:
             print(f"Error during NTConfigSource cleanup: {e}")
